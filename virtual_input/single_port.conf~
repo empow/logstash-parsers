@@ -1,0 +1,54 @@
+input { 
+  udp{
+    port =>  2055
+  }
+}
+
+filter{
+
+  translate{
+    field => "[message]"
+    destination => "[log_dispatcher]"
+    regex => true
+    dictionary => {
+      "snort.*\[[0-9]+:[0-9]+:[0-9]+\]"         => "snort"
+      "subtype=ips"			        => "fortinet"
+      "Active_Threat"				=> "cbdefense"
+      "Security risk found|Virus found"		=> "symantec"
+    }
+    fallback => "default"
+  }
+  mutate{
+    add_field => {"elastic_index" => "empow-%{log_dispatcher}"}
+  }
+}
+
+output {
+  if [log_dispatcher]=="snort" {
+    pipeline{
+      send_to => [snort_pipeline]
+    }
+  }
+  else if [log_dispatcher]=="fortinet" {
+    pipeline{
+      send_to => [fortinet_pipeline]
+    }
+  }
+  else if [log_dispatcher]=="cbdefense" {
+    pipeline{
+      send_to => [cbdefense_pipeline]
+    }
+  }
+  else if [log_dispatcher]=="symantec" {
+    pipeline{
+      send_to => [symantec_pipeline]
+    }
+  }
+  else{
+    pipeline{
+      send_to => [default_pipeline]
+    }
+  }
+ 
+}
+

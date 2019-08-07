@@ -1,0 +1,38 @@
+input{
+  pipeline{
+    address => snort_pipeline
+  }
+}
+
+filter{
+  grok{
+    match => {"message" => "%{NUMBER}\>%{SYSLOGTIMESTAMP:tmp_date} snort.*: \[(?<sig_id>%{NUMBER}:%{NUMBER}):%{NUMBER}\] .* %{IP:[source][ip]}(:%{NUMBER:[source][port]})? -> %{IP:[destination][ip]}(:%{NUMBER:[destination][port]})?"}
+    add_field => {"[observer][type]" => "IDS" "[observer][product]" => "snort"}
+
+    add_tag => ["src_ip"]
+    add_tag => ["dst_ip"]
+    add_tag => [ "empow_classification"]
+
+  }
+
+     mutate{
+       add_field => {"[empow][signature]" => "%{sig_id}"}
+     }
+
+   date{
+     match => ["tmp_date", "UNIX", "MMMM dd HH:mm:ss"]
+     target => "@timestamp"
+     remove_field => ["tmp_date"]
+   }
+
+}
+    whitelist_names => ["^source$", "^destination$", "^threat$", "^event$", "^@timestamp$", "^observer$", "^error$"]
+  }
+}
+
+output { 
+  udp{
+    host => "127.0.0.1"
+    port => 1237
+  }
+}
