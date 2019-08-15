@@ -61,7 +61,7 @@ sudo service logstash restart
 
 ```
 
-### Installing and using the Pipelines###
+### Installing and Using the Pipelines
 The set of logstash pipelines consists of multiple pipelines connected using [pipeline-to-pipeline communication feature](https://www.elastic.co/guide/en/logstash/current/pipeline-to-pipeline.html) enabling to easily configure, add and maintain incoming log parsers.
 
 ![Pipeline-to-pipeline default configuration](https://empow.co/wp-content/uploads/2019/08/pipeline-guide-v4-1-1024x724.jpg)
