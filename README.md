@@ -126,8 +126,8 @@ For example, the default input in the single port virtual input is UDP port 2055
 ## Supported Products
 
 Product Name  | Vendor Name  | Service Type
-------------- | ---------------------------
+--------------|--------------|-------------
 Snort         | Snort        | IDS
 Fortigate     | Fortinet     | IDS
-cbDefence     | Carbon Black | End Point
-              | Symantec     | Anti Virus
+cbDefence     | Carbon Black | EDR
+SEP           | Symantec     | Anti Virus
