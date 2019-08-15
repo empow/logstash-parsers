@@ -131,7 +131,7 @@ filter{
 ```
 input { 
   udp{
-    port => **517**
+    port => 517
   }
 }
 filter{
@@ -153,7 +153,7 @@ filter{
  
 ```
 input { 
-  **tcp**{
+  tcp{
     port => 2055
   }
 }
@@ -191,7 +191,7 @@ output {
 ```
 output {  
   pipeline{
-    send_to => [**empow_classifier_output**]
+    send_to => [empow_classifier_output]
   }
 }
 
@@ -232,4 +232,4 @@ SEP           | Symantec     | Anti Virus
 
 
 
-** For any questions or clarifications please contact us at <support@empow.co> **
+**For any questions or clarifications please contact us at <support@empow.co>**
