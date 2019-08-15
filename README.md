@@ -127,7 +127,7 @@ filter{
 ...
 ```
 
-![darr](https://upload.wikimedia.org/wikipedia/en/f/f1/Down_Arrow_Icon.png)
+![darr](https://upload.wikimedia.org/wikipedia/en/f/f1/Down_Arrow_Icon.png =100x200)
  &nbsp; &nbsp; &nbsp; &darr;
 ```
 input { 
