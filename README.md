@@ -16,7 +16,7 @@ In addition, some plugins can be used to enrich security logs with information a
 6. Community to share and keep up-to-date plugins
 
 
-<u>Note</u>: the plugins are based on log samples and vendors’ documentation. We are continuously updating and enriching the plugins. We encourage you to share examples and enhancements to improve the plugins and to keep them up-to-date with latest product versions. Please contact us at support@empow.co for and questions or updates.
+**Note**: the plugins are based on log samples and vendors’ documentation. We are continuously updating and enriching the plugins. We encourage you to share examples and enhancements to improve the plugins and to keep them up-to-date with latest product versions. Please contact us at support@empow.co for and questions or updates.
 
 
 ## Getting Started
@@ -26,9 +26,9 @@ If you’re an ELK user and have Logstash and Elasticsearch installed, you’re 
 The plugins are based on a typical ELK setup (if you don’t output to Elasticsearch you’ll need only Logstash). The only requirement is that the Logstash supports multiple pipelines feature (Logstash/ELK version 6.3 and above).
 For downloading and installing Logstash please refer to [Logstash installation guide](https://www.elastic.co/downloads/logstash)
 
-For downloading and installing ELK stask please refer to [ELK installation guide](https://www.elastic.co/downloads/)
+For downloading and installing ELK stack please refer to [ELK installation guide](https://www.elastic.co/downloads/).
 
-**<u>Recommended</u>** : If you’d like to take advantage of the intent classification enrichment, powered by empow, you’ll need to install [empow’s threat classification plugin](https://www.elastic.co/guide/en/logstash/current/plugins-filters-threats_classifier.html) and register to [empow's threat classification center](https://empow.co/opensource/) (**both are for free!**) as described further on in this section.
+**Recommended** : If you’d like to take advantage of the intent classification enrichment, powered by empow, you’ll need to install [empow’s threat classification plugin](https://www.elastic.co/guide/en/logstash/current/plugins-filters-threats_classifier.html) and register to [empow's threat classification center](https://empow.co/opensource/) (**both are for free!**) as described further on in this section.
 
 ## Installation guide
 #### What you will need?
