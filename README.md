@@ -80,13 +80,16 @@ unzip master.zip
 Configuring logstash [pipeline-to-pipeline](https://www.elastic.co/guide/en/logstash/current/pipeline-to-pipeline.html) is done by adding the set of pipelines to the *pipeline.yml* configuration file. For each pipeline file the following lines should be added:
 
 > \- pipeline.id: <pipeline identifier>
+>
 > path.config: <full path of the pipeline>
 
 For instance, in order to support the default configuration depicted in *Figure 1* consisting of single port virtual input (that receives all the logs on a single UDP port and dispatches them based on keywords found in the log), Carbon Black, Snort, Fortinet, and  Symantec parsers, empow threat classification (for intent based enrichment) and Elastic virtual output (that stores the logs in Elasticsearch DB), the following lines should be added to pipline.yml (where <BASE_DIR> should be replaced by the path in which the pipelines were extracted:
 
 
 > \- pipeline.id: single_port
+>
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"
+>
 > \- pipeline.id: elastic_output
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_output/elastic_output.conf"
 > \- pipeline.id: empow_classifier_output
