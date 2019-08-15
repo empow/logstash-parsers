@@ -109,7 +109,7 @@ Each pipeline can be configured and modified by editing the file. Such a configu
 #### Input Configuration
 Each virtual input can be added to the configuration by adding its identity (any unique name) and full path to the pipeline.yml configuration file. For instance, in order to add the single port virtual input, the following lines should be added:
 
-> - pipeline.id: single_port <br>
+> \- pipeline.id: single_port <br>
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf" <br>
 
 
@@ -126,6 +126,8 @@ input {
 filter{
 ...
 ```
+
+![darr](https://upload.wikimedia.org/wikipedia/en/f/f1/Down_Arrow_Icon.png)
  &nbsp; &nbsp; &nbsp; &darr;
 ```
 input { 
