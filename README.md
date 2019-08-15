@@ -195,7 +195,7 @@ output {
     send_to => [<b>empow_classifier_output</b>]
   }
 }
-<pre>
+<\pre>
 
 ![Pipeline-to-pipeline classification configuration](https://empow.co/wp-content/uploads/2019/08/Flow-2.png)
 *Figure 1: Pipeline-to-pipeline threat classification configuration*
