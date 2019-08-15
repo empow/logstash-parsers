@@ -43,7 +43,7 @@ We will use [Ubuntu 18.04](http://releases.ubuntu.com/18.04/) as the reference p
 Now that you have Logstash in place:
 
 #### Configure Logstash
-Add this line to *logstash.yml* (typically located in to enable automatic loading of configuration files:
+Add this line to *logstash.yml* to enable automatic loading of configuration files:
 
 > config.reload.automatic: true
 
