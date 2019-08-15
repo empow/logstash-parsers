@@ -67,7 +67,7 @@ The set of logstash pipelines consists of multiple pipelines connected using [pi
 ![Pipeline-to-pipeline default configuration](https://empow.co/wp-content/uploads/2019/08/pipeline-guide-v4-1-1024x724.jpg)
 *Figure 1: Pipeline-to-pipeline default configuration*
 
-Each configuration file contains a single pipeline. At the first stage, logs are entered to a virtual input pipeline that dispatches the incoming logs to a per product pipeline (a file per product). This dispatching is done based on key words found in the logs or based on port numbers (per product UDP/TCP port number) depending on the virtual input (there are multiple available virtual inputs).
+Each configuration file contains a single pipeline. At the first stage, logs are entered to a virtual input pipeline that dispatches the incoming logs to a per product pipeline (a file per product). This dispatching is done based on keywords found in the logs or based on port numbers (per product UDP/TCP port number) depending on the virtual input (there are multiple available virtual inputs).
 
 At the second stage, the logs are entered to a specific product pipeline that analyzes the log, extracts tokens and maps them according to the [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/index.html). Once the log is analyzed it leaves the pipeline and enters the next stage that may be one of the available virtual outputs (e.g. Elastic virtual output that stores the data to Elastic DB). Optionally, the log may enter an additional common processing before leaving the pipelines, such as [threat classification](https://www.elastic.co/guide/en/logstash/current/plugins-filters-threats_classifier.html) (see below).
 
