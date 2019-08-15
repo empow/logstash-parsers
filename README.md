@@ -32,13 +32,14 @@ For downloading and installing ELK stack please refer to [ELK installation guide
 
 ## Installation guide
 #### What you will need?
-1. ELK installed (Logstash is the only mandatory component). For installation instructions see: Installing ELK.
+1. [ELK installed](https://www.elastic.co/downloads/) (Logstash is the only mandatory component).
 2. empow’s SIEM pipelines (optional)
 #### Supported platform
 The set of pipelines will run on any platform running Logstash version 6.3 and above.
 
 We will use [Ubuntu 18.04](http://releases.ubuntu.com/18.04/) as the reference platform for this note.
-###Get started with Logstash and the empow SIEM pipeline
+
+### Get started with Logstash and the empow SIEM pipeline
 Now that you have Logstash in place:
 
 #### Configure Logstash
