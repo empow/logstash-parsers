@@ -79,31 +79,28 @@ unzip master.zip
 #### Logstash Configuration
 Configuring logstash [pipeline-to-pipeline](https://www.elastic.co/guide/en/logstash/current/pipeline-to-pipeline.html) is done by adding the set of pipelines to the *pipeline.yml* configuration file. For each pipeline file the following lines should be added:
 
-> \- pipeline.id: <pipeline identifier>
->
+> \- pipeline.id: <pipeline identifier> <br>
 > path.config: <full path of the pipeline>
 
 For instance, in order to support the default configuration depicted in *Figure 1* consisting of single port virtual input (that receives all the logs on a single UDP port and dispatches them based on keywords found in the log), Carbon Black, Snort, Fortinet, and  Symantec parsers, empow threat classification (for intent based enrichment) and Elastic virtual output (that stores the logs in Elasticsearch DB), the following lines should be added to pipline.yml (where <BASE_DIR> should be replaced by the path in which the pipelines were extracted:
 
 
-> \- pipeline.id: single_port
->
-> path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"
->
-> \- pipeline.id: elastic_output
-> path.config: "<BASE_DIR>/logstash-parsers/virtual_output/elastic_output.conf"
-> \- pipeline.id: empow_classifier_output
-> path.config: "<BASE_DIR>/logstash-parsers/virtual_output/empow_classifier_output.conf"
-> \- pipeline.id: default
-> path.config: "<BASE_DIR>/logstash-parsers/parsers/default_pipeline.conf"
-> \- pipeline.id: snort
-> path.config: "<BASE_DIR>/logstash-parsers/parsers/snort/snort.conf"
-> \- pipeline.id: fortinet
-> path.config: "<BASE_DIR>/logstash-parsers/parsers/fortinet/fortinet.conf"
-> \- pipeline.id: cb
-> path.config: "<BASE_DIR>/logstash-parsers/parsers/carbonblack/cbdefense.conf"
-> \- pipeline.id: symantec
-> path.config: "<BASE_DIR>/logstash-parsers/parsers/symantec/symantec.conf"
+> \- pipeline.id: single_port <br>
+> path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf" <br>
+> \- pipeline.id: elastic_output <br>
+> path.config: "<BASE_DIR>/logstash-parsers/virtual_output/elastic_output.conf" <br>
+> \- pipeline.id: empow_classifier_output <br>
+> path.config: "<BASE_DIR>/logstash-parsers/virtual_output/empow_classifier_output.conf" <br>
+> \- pipeline.id: default <br>
+> path.config: "<BASE_DIR>/logstash-parsers/parsers/default_pipeline.conf" <br>
+> \- pipeline.id: snort <br>
+> path.config: "<BASE_DIR>/logstash-parsers/parsers/snort/snort.conf" <br>
+> \- pipeline.id: fortinet <br>
+> path.config: "<BASE_DIR>/logstash-parsers/parsers/fortinet/fortinet.conf" <br>
+> \- pipeline.id: cb <br>
+> path.config: "<BASE_DIR>/logstash-parsers/parsers/carbonblack/cbdefense.conf" <br>
+> \- pipeline.id: symantec <br>
+> path.config: "<BASE_DIR>/logstash-parsers/parsers/symantec/symantec.conf" <br>
 
 
 ### Pipeline Configuration
@@ -112,8 +109,8 @@ Each pipeline can be configured and modified by editing the file. Such a configu
 #### Input Configuration
 Each virtual input can be added to the configuration by adding its identity (any unique name) and full path to the pipeline.yml configuration file. For instance, in order to add the single port virtual input, the following lines should be added:
 
-> - pipeline.id: single_port
-> path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"
+> - pipeline.id: single_port <br>
+> path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf" <br>
 
 
 Once a virtual input has been added (note that multiple inputs can be added), it can be configured by editing the pipeline itself.
@@ -129,8 +126,7 @@ input {
 filter{
 ...
 ```
-&darr;
-
+ &nbsp; &nbsp; &nbsp; &darr;
 ```
 input { 
   udp{
