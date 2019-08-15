@@ -117,7 +117,7 @@ Once a virtual input has been added (note that multiple inputs can be added), it
 
 For example, the default input in the single port virtual input is UDP port 2055, the port number can be changed by simply changing it to a different number
 
-```
+<pre>
 input { 
   udp{
     port => 2055
@@ -125,22 +125,22 @@ input {
 }
 filter{
 ...
-```
+<\pre>
  &nbsp; &nbsp; &nbsp; &darr;
  
-```
+<pre>
 input { 
   udp{
-    port => 517
+    port => <b>517</b>
   }
 }
 filter{
 ...
-```
+<\pre>
 
 the transport protocol can be changed from UDP to TCP
 
-```
+<pre>
 input { 
   udp{
     port => 2055
@@ -148,18 +148,18 @@ input {
 }
 filter{
 ...
-```
+<\pre>
  &nbsp; &nbsp; &nbsp; &darr;
  
-```
+<pre>
 input { 
-  tcp{
+  <b>tcp</b>{
     port => 2055
   }
 }
 filter{
 ...
-```
+<\pre>
 
 For other types of available inputs and their configuration, refer to [Logstash input plugins reference guide](https://www.elastic.co/guide/en/logstash/current/input-plugins.html).
 
@@ -176,26 +176,24 @@ To add empow’s intent threat classification to the output based on the setup d
 <u>NOTE</u>: the username and password in the registration form shall be used as the plugin credentials.
 Use empow’s classification virtual output, by modifying the output of each parser as follows:
 
-```
+<pre>
 output {  
   pipeline{
     send_to => [elastic_output]
   }
 }
-
-```
+</pre>
 
 &nbsp; &nbsp; &nbsp; &darr;
 
 
-```
+<pre>
 output {  
   pipeline{
-    send_to => [empow_classifier_output]
+    send_to => [<b>empow_classifier_output</b>]
   }
 }
-
-```
+<pre>
 
 ![Pipeline-to-pipeline classification configuration](https://empow.co/wp-content/uploads/2019/08/Flow-2.png)
 *Figure 1: Pipeline-to-pipeline threat classification configuration*
@@ -204,7 +202,7 @@ output {
 Once the empow classification pipeline is used, it should be configured with the empow classification center credentials (the username and password as entered in the registration form).
 
 
-```
+<pre>
 filter{
   if "empow_classification" in [tags] {
     empowclassifier{
@@ -213,13 +211,12 @@ filter{
       product_name_field => "[observer][product]"
       bulk_request_interval => 1
       bulk_request_size => 50
-      username => "username"
-      password => "password"
+      username => "<b>username</b>"
+      password => "<b>password</b>"
     }
 
-    ...
-    
-```
+    ...  
+<pre>
 
 ## Supported Products
 
@@ -229,7 +226,6 @@ Snort         | Snort        | IDS
 Fortigate     | Fortinet     | IDS
 cbDefence     | Carbon Black | EDR
 SEP           | Symantec     | Anti Virus
-
 
 
 **For any questions or clarifications please contact us at <support@empow.co>**
