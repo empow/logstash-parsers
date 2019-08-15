@@ -85,21 +85,21 @@ Configuring logstash [pipeline-to-pipeline](https://www.elastic.co/guide/en/logs
 For instance, in order to support the default configuration depicted in *Figure 1* consisting of single port virtual input (that receives all the logs on a single UDP port and dispatches them based on keywords found in the log), Carbon Black, Snort, Fortinet, and  Symantec parsers, empow threat classification (for intent based enrichment) and Elastic virtual output (that stores the logs in Elasticsearch DB), the following lines should be added to pipline.yml (where <BASE_DIR> should be replaced by the path in which the pipelines were extracted:
 
 
-> - pipeline.id: single_port
+> \- pipeline.id: single_port
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"
-> - pipeline.id: elastic_output
+> \- pipeline.id: elastic_output
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_output/elastic_output.conf"
-> - pipeline.id: empow_classifier_output
+> \- pipeline.id: empow_classifier_output
 > path.config: "<BASE_DIR>/logstash-parsers/virtual_output/empow_classifier_output.conf"
-> - pipeline.id: default
+> \- pipeline.id: default
 > path.config: "<BASE_DIR>/logstash-parsers/parsers/default_pipeline.conf"
-> - pipeline.id: snort
+> \- pipeline.id: snort
 > path.config: "<BASE_DIR>/logstash-parsers/parsers/snort/snort.conf"
-> - pipeline.id: fortinet
+> \- pipeline.id: fortinet
 > path.config: "<BASE_DIR>/logstash-parsers/parsers/fortinet/fortinet.conf"
-> - pipeline.id: cb
+> \- pipeline.id: cb
 > path.config: "<BASE_DIR>/logstash-parsers/parsers/carbonblack/cbdefense.conf"
-> - pipeline.id: symantec
+> \- pipeline.id: symantec
 > path.config: "<BASE_DIR>/logstash-parsers/parsers/symantec/symantec.conf"
 
 
