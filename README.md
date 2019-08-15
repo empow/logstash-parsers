@@ -126,9 +126,8 @@ input {
 filter{
 ...
 ```
-
-![darr](https://upload.wikimedia.org/wikipedia/en/f/f1/Down_Arrow_Icon.png =100x200)
  &nbsp; &nbsp; &nbsp; &darr;
+ 
 ```
 input { 
   udp{
@@ -139,9 +138,88 @@ filter{
 ...
 ```
 
+the transport protocol can be changed from UDP to TCP
+
+```
+input { 
+  udp{
+    port => 2055
+  }
+}
+filter{
+...
+```
+ &nbsp; &nbsp; &nbsp; &darr;
+ 
+```
+input { 
+  **tcp**{
+    port => 2055
+  }
+}
+filter{
+...
+```
+
+For other types of available inputs and their configuration, refer to [Logstash input plugins reference guide](https://www.elastic.co/guide/en/logstash/current/input-plugins.html).
+
+Dispatching the logs to specific parsers is done by searching for a specific keyword in the log (single port virtual input) or by assigning a dedicated input (e.g. dedicated port number) for each product (multi-port virtual input). In the first case, the set of keywords and regular expressions used (defined in the filter section in each conf file) can be refined and modified while adding a new product requires to add a new entry.
 
 
+### Parser Configuration
+Each product has its own parser pipeline that extracts relevant information using various [Logstash filter plugins](https://www.elastic.co/guide/en/logstash/current/filter-plugins.html). By default, the output section of the pipeline is determined to be Elasticsearch virtual output that stored the normalized log in the Elasticsearch database. The parser maps fields from the logs to the ECS schema. In some cases additional fields that do not exist in the ECS are required. You can modify the parser to suit your specific needs. You can add / remove / modify the fields and mapping.
 
+## Log enrichment using empow’s threat classification plugin
+To add empow’s intent threat classification to the output based on the setup described above, the following steps are required:
+
+[Register to empow’s classification center](https://empow.co/register-joinus-2/) (**it’s free and no private information is sent to empow’s classification center**) – to register please fill out the form at the bottom of this page.
+<u>NOTE</u>: the username and password in the registration form shall be used as the plugin credentials.
+Use empow’s classification virtual output, by modifying the output of each parser as follows:
+
+```
+output {  
+  pipeline{
+    send_to => [elastic_output]
+  }
+}
+
+```
+
+&nbsp; &nbsp; &nbsp; &darr;
+
+
+```
+output {  
+  pipeline{
+    send_to => [**empow_classifier_output**]
+  }
+}
+
+```
+
+![Pipeline-to-pipeline classification configuration](https://empow.co/wp-content/uploads/2019/08/Flow-2.png)
+*Figure 1: Pipeline-to-pipeline threat classification configuration*
+
+
+Once the empow classification pipeline is used, it should be configured with the empow classification center credentials (the username and password as entered in the registration form).
+
+
+```
+filter{
+  if "empow_classification" in [tags] {
+    empowclassifier{
+      threat_field => "empow"
+      product_type_field => "[observer][type]"
+      product_name_field => "[observer][product]"
+      bulk_request_interval => 1
+      bulk_request_size => 50
+      username => "username"
+      password => "password"
+    }
+
+    ...
+    
+```
 
 ## Supported Products
 
@@ -151,3 +229,7 @@ Snort         | Snort        | IDS
 Fortigate     | Fortinet     | IDS
 cbDefence     | Carbon Black | EDR
 SEP           | Symantec     | Anti Virus
+
+
+
+** For any questions or clarifications please contact us at <support@empow.co> **
