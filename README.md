@@ -127,7 +127,7 @@ input {
 }
 filter{
 ...
-<\pre>
+</pre>
  &nbsp; &nbsp; &nbsp; &darr;
  
 <pre>
@@ -138,7 +138,7 @@ input {
 }
 filter{
 ...
-<\pre>
+</pre>
 
 the transport protocol can be changed from UDP to TCP
 
@@ -150,7 +150,7 @@ input {
 }
 filter{
 ...
-<\pre>
+</pre>
  &nbsp; &nbsp; &nbsp; &darr;
  
 <pre>
@@ -161,7 +161,7 @@ input {
 }
 filter{
 ...
-<\pre>
+</pre>
 
 For other types of available inputs and their configuration, refer to [Logstash input plugins reference guide](https://www.elastic.co/guide/en/logstash/current/input-plugins.html).
 
@@ -195,7 +195,7 @@ output {
     send_to => [<b>empow_classifier_output</b>]
   }
 }
-<\pre>
+</pre>
 
 ![Pipeline-to-pipeline classification configuration](https://empow.co/wp-content/uploads/2019/08/Flow-2.png)
 *Figure 1: Pipeline-to-pipeline threat classification configuration*
@@ -218,7 +218,7 @@ filter{
     }
 
     ...  
-<pre>
+</pre>
 
 ## Supported Products
 
