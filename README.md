@@ -117,6 +117,29 @@ Once a virtual input has been added (note that multiple inputs can be added), it
 
 For example, the default input in the single port virtual input is UDP port 2055, the port number can be changed by simply changing it to a different number
 
+```
+input { 
+  udp{
+    port => 2055
+  }
+}
+filter{
+...
+```
+&darr;
+
+```
+input { 
+  udp{
+    port => **517**
+  }
+}
+filter{
+...
+```
+
+
+
 
 
 ## Supported Products
