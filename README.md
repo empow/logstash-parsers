@@ -1,7 +1,10 @@
 # logstash-parsers
-`- pipeline.id: single_port`
-`path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"`
-`- pipeline.id: elastic_output`
+```
+- pipeline.id: single_port`
+path.config: "<BASE_DIR>/logstash-parsers/virtual_input/single_port.conf"
+- pipeline.id: elastic_output
+```
+
 path.config: "<BASE_DIR>/logstash-parsers/virtual_output/elastic_output.conf"
 - pipeline.id: empow_classifier_output
 path.config: "<BASE_DIR>/logstash-parsers/virtual_output/empow_classifier_output.conf"
