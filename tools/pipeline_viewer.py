@@ -167,7 +167,7 @@ def main():
         print str(err)
         return 1
 
-    filename="/home/empow/Downloads/logstash-7.0.0/config/pipelines.yml"
+    filename=""
     for o, a in opts:
         if o=='-c':
             filename=a            # index suffix
