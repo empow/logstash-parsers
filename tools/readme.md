@@ -5,6 +5,7 @@ In addition, it marks configuration failures such as unused pipelines, unconnect
 
 <img src="https://github.com/empow/logstash-parsers/blob/master/tools/pipeline_viewer.png" align="left" width="480">
 
+
 ## Instalation
 The pipeline viewer  is a python script written in *python2*.
 It relies on the following common *python2* packages:
