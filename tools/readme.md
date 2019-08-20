@@ -1,5 +1,5 @@
 # pipeline viewer
-|x|x|
+|||
 |-|-|
 |aaa | aaa |
 |5353|35353|
