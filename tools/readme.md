@@ -3,6 +3,8 @@ The pipeline viewer read the Logstash pipeline.yml configuration file and all th
 
 In addition, it marks configuration failures such as unused pipelines, unconnected input and output
 
+![example](https://github.com/empow/logstash-parsers/blob/master/tools/pipeline_viewer.png)
+
 ## Instalation
 The pipeline viewer  is a python script written in *python2*.
 It relies on the following common *python2* packages:
