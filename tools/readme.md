@@ -3,7 +3,7 @@ The pipeline viewer read the Logstash pipeline.yml configuration file and all th
 
 In addition, it marks configuration failures such as unused pipelines, unconnected input and output
 
-<img src="https://github.com/empow/logstash-parsers/blob/master/tools/pipeline_viewer.png" align="left" width="480">
+![example](https://github.com/empow/logstash-parsers/blob/master/tools/pipeline_viewer.png)
 
 
 ## Instalation
