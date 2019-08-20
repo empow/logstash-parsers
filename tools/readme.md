@@ -1,3 +1,44 @@
+# Pipeline Viewer
+The pipeline viewer read the Logstash pipeline.yml configuration file and all the Logstash configuration pipelines and view the connectivity map between these pipelines.
+
+In addition, it marks configuration failures such as unused pipelines, unconnected input and output
+
+## Instalation
+The pipeline viewer  is a python script written in *python2*.
+It relies on the following common *python2* packages:
+
+1. yaml 
+2. Queue
+3. getopt
+4. nltk
+5. graphviz
+
+The pipeline viewer can be run on any platform running *python2*. <br>
+We will use *Ubuntu 18.04* as the reference platform for this note.
+
+### Install *python2*
+While *python2* is typically installed by default on *Ubuntu 18.04* you may installed it manually
+
+```sh
+sudo apt-get install python2.7
+```
+
+
+### install python packages
+```sh
+sudo pip install yaml Queue getopt nltk graphviz
+```
+
+## Usage
+Once the required packages are installed the pipeline viewer can be executed as follow:
+
+```sh
+python2 pipeline_viewer.py -c <file name>
+```
+
+where *<file name\>* is the full path of your Logstash pipeline.yaml file (e.g. */etc/logstash/pipeline.yaml*)
+
+The output is presened in a *png* format in contains the connectivity between pipelines including inputs and outputs. Thus, each pipeline is represented by a rectangle node while inputs and outputs are represented by ellipse nodes. In case that at least one of the output of a pipeline is not connected its corresponding node is
 
 |||
 |-|-|
