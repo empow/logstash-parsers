@@ -160,6 +160,66 @@ class pipeline(object):
                     
         return output_list
 
+
+# class node
+# name - unique string identifier
+# rank - topological sort rank
+# outgoingAdjacent - dictionary on outgoing adjacent
+# missingAllOutput - all the output pipelines are missing (and there is at list one output
+# missingOutput - at least one output pipelines is missing (and there is at list one output
+# missingAllInput - all the input pipelines are missing (and there is at list one input
+# missingInput - at least one input pipelines is missing (and there is at list one input
+# style (for graphviz):
+#    filled
+#    dashed - all input are missing
+# shape (for graphviz):
+#    circle: input/output
+#    rectagle: pipeline
+# color (for graphviz):
+#    red: at least one output pipeline does not connected or file not found
+#    orange: at least one input pipeline does not connected
+#    grey: well connected node
+class Node(object):
+    def __init__(self, name, style="filled", shape="circle", color="grey", missingAllOutput=False, missingOutput=False, missingAllInput=False, missingInput=False):
+        self.name=name
+        self.rank=0
+        self.outgoingAdjacent=[]
+        self.missingAllOutput=missingAllOutput
+        self.missingOutput=missingOutput
+        self.missingAllInput=missingAllInput
+        self.missingInput=missingInput
+        self.style=style
+        self.shape=shape
+        self.color=color
+    
+    def addOutgoingAdjacent(self, name):
+        self.outgoingAdjacent.append(name)
+    
+    def setRank(self, rank):
+        self.rank=rank
+
+    def setStyle(self, style):
+        self.style=style
+
+    def setShape(self, shape):
+        self.shape=shape
+
+    def setColor(self, color):
+        self.color=color
+
+    def setMissigAllOutput(self, flag):
+        self.missingAllOutput=flag
+
+    def setMissigAllInput(self, flag):
+        self.missingAllInput=flag
+        
+    def setMissigOutput(self, flag):
+        self.missingAllOutput=flag
+
+    def setMissigInput(self, flag):
+        self.missingAllInput=flag
+        
+
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:")
@@ -186,27 +246,8 @@ def main():
     in_node={}
 
 
-    # nodes (dict)
-    # for each node (pipeline or input or output): a list of adjacent unideirected nodes
-    # Note: node_original is a copy of nodes
+    # nodes dictionary {node name: node object}
     nodes={}
-
-    # nodes_info (dict)
-    # for each node (pipeline or input or output): [style, shape, color, missing all input, missig all output]
-    # style (for graphviz):
-    #    filled
-    #    dashed
-    # shape (for graphviz):
-    #    circle: input/output
-    #    rectagle: pipeline
-    # color (for graphviz)
-    #    red: at least one output pipeline does not connected
-    #    orange: at least one input pipeline does not connected
-    #    grey: well connected node
-    #
-    # missing all input: True if all the input are missing
-    # missing all output: True if all the putput are missing
-    nodes_info={}
 
     with open(filename, "r") as stream:
         try:
@@ -216,8 +257,8 @@ def main():
                         a=pipeline(p['path.config'])
                         con[p['pipeline.id']]=(a.list_of_inputs(), a.list_of_outputs())
                     except:
-                        nodes[p['pipeline.id']]=[]
-                        nodes_info[p['pipeline.id']]=["filled", "box", "red", True, True]
+                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
+                        nodes[p['pipeline.id']]=node
                         
         except yaml.YAMLError as exc:
             print "kuku"
@@ -227,7 +268,8 @@ def main():
 
     for n in con.keys():
         nodes[n]=[]
-        nodes_info[n]=["filled", "box", "grey", False, False]
+        node = Node(name=n, style="filled", shape="box", color="grey", missingAllOutput=False, missingAllInput=False)
+        nodes[n]=node
         for (a,b) in con[n][0]:
             if(a=='pipeline'):
                 if(b in in_node):
@@ -238,11 +280,11 @@ def main():
             elif(a=='udp' or a=='tcp'):
                 tmp=a+"-"+str(b)
                 if(tmp in nodes):
-                    nodes[tmp].append(n)
+                    nodes[tmp].addOutgoingAdjacent(n)
                 else:
-                    nodes[tmp]=[n]
-                    nodes_info[tmp]=["filled", "ellipse", "grey", False, False]
-
+                    tmp_node = Node(name=tmp, style="filled", shape="ellipse", color="grey", missingAllOutput=False, missingAllInput=False)
+                    tmp_node.addOutgoingAdjacent(n)
+                    nodes[tmp]=tmp_node
 
         for (a,b) in con[n][1]:
             if(a=='pipeline'):
@@ -252,13 +294,15 @@ def main():
                     out_node[b]=[n]
             if(a=='elasticsearch'):
                 tmp = "elastic" + "-" + b
-                nodes[n].append(tmp)
-                nodes[tmp]=[]
-                nodes_info[tmp]=["filled", "ellipse", "grey", False, False]
+                nodes[n].addOutgoingAdjacent(tmp)
+
+                tmp_node=Node(name=tmp, style="filled", shape="ellipse", color="grey", missingAllOutput=False, missingAllInput=False)
+                nodes[tmp]=tmp_node
             if(a=='stdout'):
-                nodes[n].append(a)
-                nodes[a]=[]
-                nodes_info[a]=["filled", "ellipse", "grey", False, False]
+                nodes[n].addOutgoingAdjacent(a)
+                tmp_node=Node(name=a, style="filled", shape="ellipse", color="grey", missingAllOutput=False, missingAllInput=False)
+                nodes[a]=tmp_node
+
 
 
     g = Digraph(engine="neato", format='png', graph_attr={'splines':"ortho"})
@@ -266,28 +310,26 @@ def main():
     for p in con:
         tmp_in=[x[1] for x in con[p][0] if x[0]=="pipeline"] 
         if(set(tmp_in).issubset(tmp_out)==False): # missing an input
-            nodes_info[p][2]="orange"
+            nodes[p].setColor("orange")
+            nodes[p].setMissigInput(True)
         if(len(tmp_in)>0 and set(tmp_in).isdisjoint(tmp_out)==True): # missing all input
-            nodes_info[p][3]=True
-            nodes_info[p][2]="orange"
-            nodes_info[p][0]="dashed"
-            
-
-
-
+            nodes[p].setMissigAllInput(True)
+            nodes[p].setColor("orange")
+            nodes[p].setStyle("dashed")        
     tmp_in = [x[1] for p in con for x in con[p][0] if x[0]=="pipeline"]
     for p in con:
         tmp_out=[x[1] for x in con[p][1] if x[0]=="pipeline"] 
         if(set(tmp_out).issubset(tmp_in)==False): # missing an output
-            nodes_info[p][2]="red"
+            nodes[p].setColor("red")
+            nodes[p].setMissigOutput(True)
         if(len(tmp_out)>0 and set(tmp_out).isdisjoint(tmp_in)==False): # missing all output
-            nodes_info[p][4]=True
+            nodes[p].setMissigAllOutput(True)
 
     for a in in_node:
         if a in out_node:
             for x in in_node[a]:
                 for y in out_node[a]:
-                    nodes[y].append(x)
+                    nodes[y].addOutgoingAdjacent(x)
 
 
     in_deg={}
@@ -295,18 +337,18 @@ def main():
         in_deg[n]=0
 
     for n in nodes:
-        for i in nodes[n]:
+        for i in nodes[n].outgoingAdjacent:
             in_deg[i]+=1
     nodes_rank={}
     rank=0
 
-    nodes_original=dict.copy(nodes)
+    tmp_nodes=dict.copy(nodes)
 
-    while(len(nodes)>0):
+    while(len(tmp_nodes)>0):
         # find sources (first we search for well connected nodes)
         flag=False
         for n in in_deg:
-            if in_deg[n]==0 and nodes_info[n][3]==False:
+            if in_deg[n]==0 and tmp_nodes[n].missingAllInput==False:
                 flag=True
                 nodes_rank[n]=rank
 
@@ -319,15 +361,16 @@ def main():
         # remove ranked nodes
         for n in nodes_rank:
             if nodes_rank[n]==rank:
-                for t in nodes[n]:
+                for t in tmp_nodes[n].outgoingAdjacent:
                     in_deg[t]-=1
-                del nodes[n]
+                del tmp_nodes[n]
                 del in_deg[n]
         rank+=1
          
     ranks={}
-    for n in nodes_original:
+    for n in nodes:
         r=nodes_rank[n]
+        nodes[n].setRank(r)
         if r in ranks:
             ranks[r].append(n)
         else:
@@ -345,10 +388,10 @@ def main():
         for n in ranks[i]:
             j+=x
 
-            g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes_info[n][1], style=nodes_info[n][0], color=nodes_info[n][2])
+            g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes[n].shape, style=nodes[n].style, color=nodes[n].color)
 
-    for v in nodes_original:
-        for u in nodes_original[v]:
+    for v in nodes:
+        for u in nodes[v].outgoingAdjacent:
             g.edge(v, u)
 
 
