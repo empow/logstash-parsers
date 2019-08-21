@@ -1,13 +1,15 @@
-# Multi Pipeline Viewer
-The pipeline viewer read the Logstash pipeline.yml configuration file and all the Logstash configuration pipelines and view the connectivity map between these pipelines.
+# Logstash Multi Pipeline Visualization
+A utility for vizualizing Logstash [multi pipeline](https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html)  including [pipeline-to-pipeline](https://www.elastic.co/guide/en/logstash/current/pipeline-to-pipeline.html) configuration.The visualization helps in checking the correctness of the configuration and understand the data flow.
 
-In addition, it marks configuration failures such as unused pipelines, unconnected input and output
+The Multi Pipeline Visualization reads the Logstash *pipeline.yml* configuration file and all related Logstash configuration pipelines and visualizes the connectivity map between the pipelines.
+
+In addition, it marks configuration failures such as unused pipelines, and unconnected input and output.
 
 ![example](https://github.com/empow/logstash-parsers/blob/master/images/pipeline_viewer.png)
 
 
 ## Instalation
-The pipeline viewer  is a python script written in *python2*.
+The Multi Pipeline Visualization  is a python script written in *python2*.
 It relies on the following common *python2* packages:
 
 1. yaml 
@@ -16,11 +18,11 @@ It relies on the following common *python2* packages:
 4. nltk
 5. graphviz
 
-The pipeline viewer can be run on any platform running *python2*. <br>
+The utilityr can be run on any platform running *python2*. <br>
 We will use *Ubuntu 18.04* as the reference platform for this note.
 
 ### Install *python2*
-While *python2* is typically installed by default on *Ubuntu 18.04* you may installed it manually
+While *python2* is typically installed by default on *Ubuntu 18.04* you may install it manually
 
 ```sh
 sudo apt-get install python2.7
@@ -41,7 +43,8 @@ python2 pipeline_viewer.py -c <file name>
 
 where *<file name\>* is the full path of your Logstash pipeline.yaml file (e.g. */etc/logstash/pipeline.yaml*)
 
-The output is presened in a *png* format in contains the connectivity between pipelines including inputs and outputs. Thus, each pipeline is represented by a rectangle node while inputs and outputs are represented by ellipse nodes. In case that at least one of the output of a pipeline is not connected its corresponding node is
+The output is presented in *png* format and shows the connectivity between pipelines including inputs and outputs. Each pipeline is represented by a rectangle node while inputs and outputs are represented by ellipse nodes.
+
 
 |||
 |-|-|
