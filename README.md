@@ -28,7 +28,7 @@ For downloading and installing Logstash please refer to [Logstash installation g
 
 For downloading and installing ELK stack please refer to [ELK installation guide](https://www.elastic.co/downloads/).
 
-**Recommended** : If you’d like to take advantage of the intent classification enrichment, powered by empow, you’ll need to install [empow’s threat classification plugin](https://www.elastic.co/guide/en/logstash/current/plugins-filters-threats_classifier.html) and register to [empow's threat classification center](https://empow.co/opensource/) (**both are for free!**) as described further on in this section.
+**Recommended** : If you’d like to take advantage of the intent classification enrichment, powered by empow, you’ll need to install [empow’s threat classification plugin](https://www.elastic.co/guide/en/logstash/current/plugins-filters-threats_classifier.html) and register to [empow's threat classification center](https://empow.co/opensource/) (**both are for free!**) as described [further on in this section](https://github.com/empow/logstash-parsers/blob/master/README.md#log-enrichment-using-empows-threat-classification-plugin).
 
 ## Installation guide
 #### What you will need?
