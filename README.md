@@ -64,7 +64,7 @@ sudo service logstash restart
 ### Installing and Using the Pipelines
 The set of Logstash pipelines consists of multiple pipelines connected using [pipeline-to-pipeline communication feature](https://www.elastic.co/guide/en/logstash/current/pipeline-to-pipeline.html) enabling to easily configure, add and maintain incoming log parsers.
 
-![Pipeline-to-pipeline default configuration](https://empow.co/wp-content/uploads/2019/08/pipeline-guide-v4-1-1024x724.jpg)
+![Pipeline-to-pipeline default configuration](https://github.com/empow/logstash-parsers/blob/master/images/pipeline_default.jpeg)
 *Figure 1: Pipeline-to-pipeline default configuration*
 
 Each configuration file contains a single pipeline. At the first stage, logs are entered to a virtual input pipeline that dispatches the incoming logs to a per product pipeline (a file per product). This dispatching is done based on keywords found in the logs or based on port numbers (per product UDP/TCP port number) depending on the virtual input (there are multiple available virtual inputs).
@@ -198,7 +198,7 @@ output {
 }
 </pre>
 
-![Pipeline-to-pipeline classification configuration](https://empow.co/wp-content/uploads/2019/08/Flow-2.png)
+![Pipeline-to-pipeline classification configuration](https://github.com/empow/logstash-parsers/blob/master/images/pipeline_enrich.png)
 *Figure 1: Pipeline-to-pipeline threat classification configuration*
 
 
