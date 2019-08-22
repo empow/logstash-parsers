@@ -233,5 +233,5 @@ SEP           | Symantec     | Anti Virus
 
 **For any questions or clarifications please contact us at <support@empow.co>**
 
-## Multi Pipeline Viewer
-This tool enables to view the current multi pipeline configuraqtion and the co
+## Multi Pipeline Visualization
+To validate and visualize your multi pipeline configuration use the [Logstash Multi Pipeline Visualization](https://github.com/empow/logstash-parsers/tree/master/tools) tool
