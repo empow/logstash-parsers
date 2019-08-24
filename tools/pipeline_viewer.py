@@ -25,8 +25,114 @@ from nltk.tokenize import word_tokenize
 
 from graphviz import Digraph
 import graphviz
+import re
 
-class pipeline(object):
+# extract idenfifier from both input and output
+# E.g.:
+#        from udp/tcp input: the port number
+#        from elasticsearch output the hosts (multiple identifiers)
+class NodeId(object):
+    def __init__(self):
+        pass
+    def getNodeIdentifier(self, tokens):
+        return []
+
+# extract simple idenfifier containing just the prefix
+class NodeIdSimple(NodeId):
+    def __init__(self, prefix):
+        self.prefix=prefix
+    def getNodeIdentifier(self, tokens):
+        return [self.prefix]
+
+# extract a list of idenfifier from the location based on a regex
+class NodeIdList(NodeId):
+    def __init__(self, prefix, location, regex):
+        if(len(prefix)==0 or location == None):
+            self.prefix=prefix
+        else:
+            self.prefix=prefix + "-"
+        self.location=location
+        self.regex=regex
+    def getNodeIdentifier(self, tokens):
+        locationFlag=False # indicates if the location of the identifier has been found
+        for i in xrange(len(tokens)):
+            locationFlag=True
+            for j in xrange(len(self.location)):
+                if(i+j>len(tokens) or tokens[i+j]!=self.location[j]):
+                    locationFlag=False
+                    break
+            if locationFlag==True:
+                break
+
+        if locationFlag==False:
+            return [self.prefix]
+
+        s=i+len(self.location)
+        j=0
+        while(True):
+            if(tokens[i+len(self.location)+j]==']'):
+                break
+            j+=1
+        e=i+len(self.location)+j
+        txt=''.join(tokens[s+1:e])
+        x=re.findall(self.regex, txt)
+        idList=[]
+        for i in x:
+            idList.append(self.prefix+i)
+        return idList
+
+#extract a simple and single field that come just after the location
+class NodeIdSingleField(NodeId):
+    def __init__(self, prefix, location):
+        if(len(prefix)==0 or location == None):
+            self.prefix=prefix
+        else:
+            self.prefix=prefix + "-"
+        self.location=location
+
+    def getNodeIdentifier(self, tokens):
+        locationFlag=False # indicates if the location of the identifier has been found
+        for i in xrange(len(tokens)):
+            locationFlag=True
+            for j in xrange(len(self.location)):
+                if(i+j>len(tokens) or tokens[i+j]!=self.location[j]):
+                    locationFlag=False
+                    break
+            if locationFlag==True:
+                break
+
+        if locationFlag==False:
+            return [self.prefix]
+
+        return [self.prefix+tokens[i+len(self.location)]]
+
+#extract a single field consisting of multiple values that come just after each location
+class NodeIdMultipleFields(NodeId):
+    def __init__(self, prefix, location):
+        if(len(prefix)==0 or location == None):
+            self.prefix=prefix
+        else:
+            self.prefix=prefix + "-"
+        self.location=location
+
+    def getNodeIdentifier(self, tokens):
+        idList=[]
+        for loc in self.location:
+            locationFlag=False # indicates if the location of the identifier has been found
+            for i in xrange(len(tokens)):
+                locationFlag=True
+                for j in xrange(len(loc)):
+                    if(i+j>len(tokens) or tokens[i+j]!=loc[j]):
+                        locationFlag=False
+                        break
+                if locationFlag==True:
+                    break
+
+            if locationFlag==True:
+                idList.append(tokens[i+len(loc)])
+
+        return [self.prefix+ '-'.join(idList)]
+class Pipeline(object):
     def __init__(self, filename):
         f=open(filename, 'r')
         self.t=[]
@@ -38,7 +144,7 @@ class pipeline(object):
                     tokens=tokens[:i]
                     break
             self.t+=tokens
-            (self.p1, self.p2) = pipeline.parenthesis(self.t)
+            (self.p1, self.p2) = Pipeline.parenthesis(self.t)
             if(self.p1==None):
                 self.t=[]
                 return
@@ -88,76 +194,46 @@ class pipeline(object):
         return self.t[self.output_index: self.p1[self.output_index]]
 
 
-    def list_of_inputs(self):
+    def list_of_inputs(self, nodeId):
         x=self.get_input()
-        (p1, p2) = pipeline.parenthesis(x)
+        (p1, p2) = Pipeline.parenthesis(x)
         l=[]
         i=1
         
+        input_list=[]
+
         while(i<len(x)):
-            if x[i] in ["pipeline", "udp", "tcp", "stdin"]:
-                l.append((x[i], i+1, p1[i+1]))
+            t=x[i]+"_input"
+            if t in nodeId:
+                ttt = nodeId[t]
+                n=ttt.getNodeIdentifier(x[i+1:p1[i+1]])
+                for v in n:
+                    input_list.append((x[i], v))
                 i=p1[i+1]+1
             else:
                 i+=1
 
-
-        input_list=[]
-        for i in l:
-            if i[0]=='udp' or i[0]=="tcp":
-                for j in xrange(i[1],i[2]):
-                    if(x[j]=="port" and x[j+1]=="=" and x[j+2]==">"):
-                        input_list.append((i[0], x[j+3]))
-                        break
-            if i[0]=='pipeline':
-                for j in xrange(i[1],i[2]):
-                    if(x[j]=="address" and x[j+1]=="=" and x[j+2]==">"):
-                        input_list.append((i[0], x[j+3]))
-                        break
-                    
         return input_list
 
 
-    def list_of_outputs(self):
+    def list_of_outputs(self, nodeId):
         x=self.get_output()
-        (p1, p2) = pipeline.parenthesis(x)
+        (p1, p2) = Pipeline.parenthesis(x)
         l=[]
         i=1
+
+        output_list=[]
         while(i<len(x)):
-            if x[i] in ["pipeline", "udp, tcp", "elasticsearch", "stdout"]:
-                l.append((x[i], i+1, p1[i+1]))
+            t=x[i]+"_output"
+            if t in nodeId:
+                ttt = nodeId[t]
+                n=ttt.getNodeIdentifier(x[i+1:p1[i+1]])
+                for v in n:
+                    output_list.append((x[i], v))
                 i=p1[i+1]+1
             else:
                 i+=1
-
-
-        output_list=[]
-        for i in l:
-            if i[0]=='elasticsearch':
-                for j in xrange(i[1], i[2]):
-                    if(x[j]=="hosts" and x[j+1]=="=" and x[j+2]==">"):
-                        k=0
-                        while(x[j+3+k] != ']'):
-                            if(x[j+4+k]==':'):
-                                output_list.append((i[0], x[j+4+k-1]))
-                            k+=1
-
-            if i[0]=='stdout':
-                output_list.append((i[0], i[0]))
-            if i[0]=='udp' or i[0]=='tcp':
-                output_list.append((i[0], i[0]))
-            if i[0]=='udp' or i[0]=='tcp':
-                output_list.append((i[0], i[0]))
-            if i[0]=='pipeline':
-                for j in xrange(i[1], i[2]):
-                    if(x[j]=="send_to" and x[j+1]=="=" and x[j+2]==">" and x[j+3]=="["):
-                        k=0
-                        while(x[j+4+k] != ']'):
-                            if(x[j+4+k]!=','):
-                                output_list.append((i[0], x[j+4+k]))
-                            k+=1
-                        break
-                    
+                                    
         return output_list
 
 
@@ -218,7 +294,30 @@ class Node(object):
 
     def setMissigInput(self, flag):
         self.missingAllInput=flag
-        
+     
+def hasCycle(nodes):
+    tmp_nodes={}
+    for v in nodes:
+        u=[u for u in nodes[v].outgoingAdjacent if u in nodes]
+        tmp_nodes[v]=u
+
+    while(True):
+        t = [n for n in tmp_nodes if len(tmp_nodes[n])==0]
+        if(len(t)==0):
+            break
+        for i in t:
+            del tmp_nodes[i]
+            for v in tmp_nodes:
+                if i in tmp_nodes[v]:
+                    tmp_nodes[v].remove(i)
+
+    if len(tmp_nodes)==0:
+        return False
+    return True
+
+def printGraph(nodes):
+    for v in nodes:
+        print v, nodes[v].outgoingAdjacent
 
 def main():
     try:
@@ -248,20 +347,54 @@ def main():
 
     # nodes dictionary {node name: node object}
     nodes={}
+    
+    # a dict containing all the type of input/output to be analyzed
+    nodeId={}
+
+    n=NodeIdList("", ["send_to", "=", ">"], "(\w+)")
+    nodeId["pipeline_output"]=n
+
+    n=NodeIdList("elastic", ["hosts", "=", ">"], "\"([^:]*):\d+\"")
+    nodeId["elasticsearch_output"]=n
+
+    n=NodeIdMultipleFields("udp", [["port", "=", ">"], ["host", "=", ">", "\""]])
+    nodeId["udp_output"]=n
+
+    n=NodeIdMultipleFields("tcp", [["port", "=", ">"], ["host", "=", ">", "\""]])
+    nodeId["tcp_output"]=n
+
+    n=NodeIdSimple("stdout")
+    nodeId["stdout_output"]=n
+
+
+
+    n=NodeIdSingleField("", ["address", "=", ">"])
+    nodeId["pipeline_input"]=n
+
+    n=NodeIdSingleField("udp", ["port", "=", ">"])
+    nodeId["udp_input"]=n
+
+    n=NodeIdSingleField("tcp", ["port", "=", ">"])
+    nodeId["tcp_input"]=n
+
+    n=NodeIdSimple("stdin")
+    nodeId["stdin_input"]=n
+
+
+
 
     with open(filename, "r") as stream:
         try:
             for p in (yaml.safe_load(stream)):
                 if 'path.config' in p.keys() and 'pipeline.id' in p.keys():
                     try:
-                        a=pipeline(p['path.config'])
-                        con[p['pipeline.id']]=(a.list_of_inputs(), a.list_of_outputs())
-                    except:
-                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
+                        a=Pipeline(p['path.config'])
+                        con[p['pipeline.id']]=(a.list_of_inputs(nodeId), a.list_of_outputs(nodeId))
+                    except Exception as e: 
+                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="blue", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
                         nodes[p['pipeline.id']]=node
                         
         except yaml.YAMLError as exc:
-            print "kuku"
             print(exc)
 
 
@@ -277,8 +410,8 @@ def main():
                 else:
                     in_node[b]=[n]
                 
-            elif(a=='udp' or a=='tcp'):
-                tmp=a+"-"+str(b)
+            else: # input/output node
+                tmp=b
                 if(tmp in nodes):
                     nodes[tmp].addOutgoingAdjacent(n)
                 else:
@@ -292,20 +425,15 @@ def main():
                     out_node[b].append(n)
                 else:
                     out_node[b]=[n]
-            if(a=='elasticsearch'):
-                tmp = "elastic" + "-" + b
+            else:
+                tmp = b
                 nodes[n].addOutgoingAdjacent(tmp)
 
                 tmp_node=Node(name=tmp, style="filled", shape="ellipse", color="grey", missingAllOutput=False, missingAllInput=False)
                 nodes[tmp]=tmp_node
-            if(a=='stdout'):
-                nodes[n].addOutgoingAdjacent(a)
-                tmp_node=Node(name=a, style="filled", shape="ellipse", color="grey", missingAllOutput=False, missingAllInput=False)
-                nodes[a]=tmp_node
 
 
 
-    g = Digraph(engine="neato", format='png', graph_attr={'splines':"ortho"})
     tmp_out = [x[1] for p in con for x in con[p][1] if x[0]=="pipeline"]
     for p in con:
         tmp_in=[x[1] for x in con[p][0] if x[0]=="pipeline"] 
@@ -358,6 +486,10 @@ def main():
                 if in_deg[n]==0:
                     flag=True
                     nodes_rank[n]=rank
+
+        if(flag==False): # cycles exist!
+            break
+                    
         # remove ranked nodes
         for n in nodes_rank:
             if nodes_rank[n]==rank:
@@ -366,7 +498,40 @@ def main():
                 del tmp_nodes[n]
                 del in_deg[n]
         rank+=1
-         
+
+    if(len(tmp_nodes)>0):  # cycles exists ! view it.
+        # let's remove nodes in which their out degree is 0
+        while(True):
+            t = [n for n in tmp_nodes if len(tmp_nodes[n].outgoingAdjacent)==0]
+            if(len(t)==0):
+                break
+            for i in t:
+                del tmp_nodes[i]
+                for v in tmp_nodes:
+                    if i in tmp_nodes[v].outgoingAdjacent:
+                        tmp_nodes[v].outgoingAdjacent.remove(i)
+
+
+        tmp=dict.copy(tmp_nodes)
+        for v in tmp_nodes:
+            del tmp[v]
+            if(hasCycle(tmp)==False):
+                tmp[v]=tmp_nodes[v]
+        
+        
+               
+        g = Digraph(engine="dot", format='png')
+        for v in tmp:
+            g.node(v, shape="box", style="filled", color="red")
+
+        for v in tmp:
+            for u in tmp[v].outgoingAdjacent:
+                if u not in tmp:
+                    continue
+                g.edge(v, u, color="red")
+        g.view()
+        return 
+
     ranks={}
     for n in nodes:
         r=nodes_rank[n]
@@ -380,6 +545,8 @@ def main():
     for i in ranks:
         if(len(ranks[i])>m):
            m=len(ranks[i])
+
+    g = Digraph(engine="neato", format='png', graph_attr={'splines':"ortho"})
 
     for i in ranks:
         x=float(m)/(len(ranks[i])+1)
