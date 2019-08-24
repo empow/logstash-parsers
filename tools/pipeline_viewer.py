@@ -391,7 +391,7 @@ def main():
                         a=Pipeline(p['path.config'])
                         con[p['pipeline.id']]=(a.list_of_inputs(nodeId), a.list_of_outputs(nodeId))
                     except Exception as e: 
-                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="blue", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
+                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
                         nodes[p['pipeline.id']]=node
                         
         except yaml.YAMLError as exc:
