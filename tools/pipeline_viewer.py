@@ -18,7 +18,7 @@
 import sys
 import yaml
 import Queue
-import getopt
+import optparse
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -26,6 +26,68 @@ from nltk.tokenize import word_tokenize
 from graphviz import Digraph
 import graphviz
 import re
+
+
+# print colored text of terminal
+def colored(s, fg="default", style="normal", bg="default"):
+    base="\033[m"
+    scheme="\033[%s;%s%sm"
+    fg_map={}
+    fg_map["default"]=""
+    fg_map["black"]="30"
+    fg_map["red"]="31"
+    fg_map["green"]="32"
+    fg_map["yellow"]="33"
+    fg_map["blue"]="34"
+    fg_map["purple"]="35"
+    fg_map["cyan"]="36"
+    fg_map["white"]="37"
+    fg_map["gray"]="38"
+
+    bg_map={}
+    bg_map={}
+    bg_map["default"]=""
+    bg_map["black"]=";40"
+    bg_map["red"]=";41"
+    bg_map["green"]=";42"
+    bg_map["yellow"]=";43"
+    bg_map["blue"]=";44"
+    bg_map["purple"]=";45"
+    bg_map["cyan"]=";46"
+    bg_map["white"]=";47"
+    bg_map["gray"]=";48"
+    
+    style_map={}
+    style_map["normal"]="0"
+    style_map["bold"]="1"
+    style_map["underline"]="2"
+    style_map["negative"]="3"
+    
+    fg_color=""
+    if fg in fg_map:
+        fg_color=fg_map[fg]
+
+    bg_color=""
+    if bg in bg_map:
+        bg_color=bg_map[bg]
+
+    text_style="0"
+    if style in style_map:
+        text_style=style_map[style]
+        
+    c=scheme % (text_style, fg_color, bg_color)
+    return "%s%s%s" % (c, s, base)
+
+
+def print_errors(errors):
+    for (m,i) in errors:
+        if i=="error":
+            print colored("ERROR: " + m, "red", "bold")
+        elif i=="warning":
+            print colored("WARN:  " + m, "red", "bold")
+        else:
+            print colored("INFO:  " + m)
+        
 
 # extract idenfifier from both input and output
 # E.g.:
@@ -175,6 +237,7 @@ class Pipeline(object):
                 p1[k]=i
                 p2[i]=k
                 continue
+
         return (p1, p2)
 
     
@@ -320,16 +383,12 @@ def printGraph(nodes):
         print v, nodes[v].outgoingAdjacent
 
 def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "c:")
-    except getopt.GetoptError as err:
-        print str(err)
-        return 1
 
-    filename=""
-    for o, a in opts:
-        if o=='-c':
-            filename=a            # index suffix
+    parser = optparse.OptionParser()
+    parser.add_option('-c', dest="filename", default="", help="full path of the pipeline.yml configuration file.")
+    parser.add_option('-v', dest="verbose", default=False, action="store_true", help="prints various information useful for debugging.")
+
+    (option, args)= parser.parse_args()
 
     # con (dict)
     # for each pipeline identifier: (list of input, list of output)
@@ -351,6 +410,7 @@ def main():
     # a dict containing all the type of input/output to be analyzed
     nodeId={}
 
+    # output identifiers
     n=NodeIdList("", ["send_to", "=", ">"], "(\w+)")
     nodeId["pipeline_output"]=n
 
@@ -367,7 +427,7 @@ def main():
     nodeId["stdout_output"]=n
 
 
-
+    # input identifiers
     n=NodeIdSingleField("", ["address", "=", ">"])
     nodeId["pipeline_input"]=n
 
@@ -380,10 +440,17 @@ def main():
     n=NodeIdSimple("stdin")
     nodeId["stdin_input"]=n
 
+    n=NodeIdSingleField("beats", ["port", "=", ">"])
+    nodeId["beats_input"]=n
 
 
+    # list of error to be printed (if verbose is True)
+    # each element: (message, error type) 
+    # Type: info, warning, error
 
-    with open(filename, "r") as stream:
+    errors=[]
+
+    with open(option.filename, "r") as stream:
         try:
             for p in (yaml.safe_load(stream)):
                 if 'path.config' in p.keys() and 'pipeline.id' in p.keys():
@@ -391,8 +458,10 @@ def main():
                         a=Pipeline(p['path.config'])
                         con[p['pipeline.id']]=(a.list_of_inputs(nodeId), a.list_of_outputs(nodeId))
                     except Exception as e: 
+                        errors.append((str(e), "error"))
                         node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
                         nodes[p['pipeline.id']]=node
+                        errors.append(("Pipeline %s cannot be parsed" % p['pipeline.id'], "error"))
                         
         except yaml.YAMLError as exc:
             print(exc)
@@ -440,18 +509,26 @@ def main():
         if(set(tmp_in).issubset(tmp_out)==False): # missing an input
             nodes[p].setColor("orange")
             nodes[p].setMissigInput(True)
+            errors.append(("Some of the input of pipeline %s are missing" % p, "info"))
         if(len(tmp_in)>0 and set(tmp_in).isdisjoint(tmp_out)==True): # missing all input
             nodes[p].setMissigAllInput(True)
             nodes[p].setColor("orange")
-            nodes[p].setStyle("dashed")        
+            nodes[p].setStyle("dashed")
+            errors.append(("All the input of pipeline %s are missing (the pipeline is unused)" % p, "info"))
+
     tmp_in = [x[1] for p in con for x in con[p][0] if x[0]=="pipeline"]
     for p in con:
         tmp_out=[x[1] for x in con[p][1] if x[0]=="pipeline"] 
         if(set(tmp_out).issubset(tmp_in)==False): # missing an output
             nodes[p].setColor("red")
             nodes[p].setMissigOutput(True)
-        if(len(tmp_out)>0 and set(tmp_out).isdisjoint(tmp_in)==False): # missing all output
+            errors.append(("Some of the output of pipeline %s are missing" % p, "error"))
+
+        if(len(tmp_out)>0 and set(tmp_out).isdisjoint(tmp_in)==True): # missing all output
             nodes[p].setMissigAllOutput(True)
+            print tmp_out, tmp_in
+            errors.append(("All the output of pipeline %s are missing" % p, "error"))
+
 
     for a in in_node:
         if a in out_node:
@@ -499,6 +576,8 @@ def main():
                 del in_deg[n]
         rank+=1
 
+    g = Digraph(engine="dot", format='png')
+
     if(len(tmp_nodes)>0):  # cycles exists ! view it.
         # let's remove nodes in which their out degree is 0
         while(True):
@@ -520,50 +599,55 @@ def main():
         
         
                
-        g = Digraph(engine="dot", format='png')
         for v in tmp:
             g.node(v, shape="box", style="filled", color="red")
 
+        errors.append(("One or more cycles has been found", "error"))
         for v in tmp:
             for u in tmp[v].outgoingAdjacent:
                 if u not in tmp:
                     continue
                 g.edge(v, u, color="red")
         g.view()
-        return 
 
-    ranks={}
-    for n in nodes:
-        r=nodes_rank[n]
-        nodes[n].setRank(r)
-        if r in ranks:
-            ranks[r].append(n)
-        else:
-            ranks[r]=[n]
+    else: # no cycles
+        ranks={}
+        for n in nodes:
+            r=nodes_rank[n]
+            nodes[n].setRank(r)
+            if r in ranks:
+                ranks[r].append(n)
+            else:
+                ranks[r]=[n]
+                
+        m=0
+
+        for i in ranks:
+            if(len(ranks[i])>m):
+                m=len(ranks[i])
+
+
+        g = Digraph(engine="neato", format='png', graph_attr={'splines':"ortho"})
+
+
+        for i in ranks:
+            x=float(m)/(len(ranks[i])+1)
+            x*=2
+            j=0
+            for n in ranks[i]:
+                j+=x
+
+                g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes[n].shape, style=nodes[n].style, color=nodes[n].color)
             
-    m=0
-    for i in ranks:
-        if(len(ranks[i])>m):
-           m=len(ranks[i])
-
-    g = Digraph(engine="neato", format='png', graph_attr={'splines':"ortho"})
-
-    for i in ranks:
-        x=float(m)/(len(ranks[i])+1)
-        x*=2
-        j=0
-        for n in ranks[i]:
-            j+=x
-
-            g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes[n].shape, style=nodes[n].style, color=nodes[n].color)
-
-    for v in nodes:
-        for u in nodes[v].outgoingAdjacent:
-            g.edge(v, u)
+        for v in nodes:
+            for u in nodes[v].outgoingAdjacent:
+                g.edge(v, u)
 
 
         
     g.view()
+    if(option.verbose==True):
+        print_errors(errors)
 
 
 main()
