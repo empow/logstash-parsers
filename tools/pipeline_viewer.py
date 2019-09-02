@@ -15,6 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+
 import sys
 import yaml
 import Queue
@@ -25,8 +26,10 @@ from nltk.tokenize import word_tokenize
 
 from graphviz import Digraph
 import graphviz
-import re
 
+#local libraries
+import nodeidentifier as ni
+from node import Node, hasCycle
 
 # print colored text of terminal
 def colored(s, fg="default", style="normal", bg="default"):
@@ -89,136 +92,9 @@ def print_errors(errors):
             print colored("INFO:  " + m)
         
 
-# extract idenfifier from both input and output
-# E.g.:
-#        from udp/tcp input: the port number
-#        from elasticsearch output the hosts (multiple identifiers)
-class NodeId(object):
-    def __init__(self):
-        pass
-    def getNodeIdentifier(self, tokens):
-        return []
 
-# extract simple idenfifier containing just the prefix
-class NodeIdSimple(NodeId):
-    def __init__(self, prefix):
-        self.prefix=prefix
-    def getNodeIdentifier(self, tokens):
-        return [self.prefix]
 
-# extract a list of idenfifier from the location based on a regex
-class NodeIdList(NodeId):
-    def __init__(self, prefix, location, regex):
-        if(len(prefix)==0 or location == None):
-            self.prefix=prefix
-        else:
-            self.prefix=prefix + "-"
-        self.location=location
-        self.regex=regex
-    def getNodeIdentifier(self, tokens):
-        locationFlag=False # indicates if the location of the identifier has been found
-        for i in xrange(len(tokens)):
-            locationFlag=True
-            for j in xrange(len(self.location)):
-                if(i+j>len(tokens) or tokens[i+j]!=self.location[j]):
-                    locationFlag=False
-                    break
-            if locationFlag==True:
-                break
-
-        if locationFlag==False:
-            return [self.prefix]
-
-        s=i+len(self.location)
-        j=0
-        while(True):
-            if(tokens[i+len(self.location)+j]==']'):
-                break
-            j+=1
-        e=i+len(self.location)+j
-        txt=''.join(tokens[s+1:e])
-        x=re.findall(self.regex, txt)
-        idList=[]
-        for i in x:
-            idList.append(self.prefix+i)
-        return idList
-
-#extract a simple and single field that come just after the location
-class NodeIdSingleField(NodeId):
-    def __init__(self, prefix, location):
-        if(len(prefix)==0 or location == None):
-            self.prefix=prefix
-        else:
-            self.prefix=prefix + "-"
-        self.location=location
-
-    def getNodeIdentifier(self, tokens):
-        locationFlag=False # indicates if the location of the identifier has been found
-        for i in xrange(len(tokens)):
-            locationFlag=True
-            for j in xrange(len(self.location)):
-                if(i+j>len(tokens) or tokens[i+j]!=self.location[j]):
-                    locationFlag=False
-                    break
-            if locationFlag==True:
-                break
-
-        if locationFlag==False:
-            return [self.prefix]
-
-        return [self.prefix+tokens[i+len(self.location)]]
-
-#extract a single field consisting of multiple values that come just after each location
-class NodeIdMultipleFields(NodeId):
-    def __init__(self, prefix, location):
-        if(len(prefix)==0 or location == None):
-            self.prefix=prefix
-        else:
-            self.prefix=prefix + "-"
-        self.location=location
-
-    def getNodeIdentifier(self, tokens):
-        idList=[]
-        for loc in self.location:
-            locationFlag=False # indicates if the location of the identifier has been found
-            for i in xrange(len(tokens)):
-                locationFlag=True
-                for j in xrange(len(loc)):
-                    if(i+j>len(tokens) or tokens[i+j]!=loc[j]):
-                        locationFlag=False
-                        break
-                if locationFlag==True:
-                    break
-
-            if locationFlag==True:
-                idList.append(tokens[i+len(loc)])
-
-        return [self.prefix+ '-'.join(idList)]
 class Pipeline(object):
-    def __init__(self, filename):
-        f=open(filename, 'r')
-        self.t=[]
-        for l in f.readlines():
-            tokens = word_tokenize(l)
-            # remove comments
-            for i in xrange(len(tokens)):
-                if(tokens[i]=="#"):
-                    tokens=tokens[:i]
-                    break
-            self.t+=tokens
-            (self.p1, self.p2) = Pipeline.parenthesis(self.t)
-            if(self.p1==None):
-                self.t=[]
-                return
-
-        self.input_index=self.filter_index=self.output_index=None
-        for i in xrange(len(self.t)):
-            if self.t[i]=="input":
-                self.input_index=i+1
-            elif self.t[i]=="filter":
-                self.filter_index=i+1
-            elif self.t[i]=="output":
-                self.output_index=i+1
 
     @staticmethod
     def parenthesis(x):
@@ -242,145 +118,100 @@ class Pipeline(object):
 
     
     def get_input(self):
-        if self.input_index==None:
+        if self._input_index==None:
             return None
-        return self.t[self.input_index: self.p1[self.input_index]]
+        return self._t[self._input_index: self._p1[self._input_index]]
         
     def get_filter(self):
-        if self.filter_index==None:
+        if self._filter_index==None:
             return None
-        return self.t[self.filter_index: self.p1[self.filter_index]]
+        return self._t[self._filter_index: self._p1[self._filter_index]]
 
     def get_output(self):
-        if self.output_index==None:
+        if self._output_index==None:
             return None
-        return self.t[self.output_index: self.p1[self.output_index]]
+        return self._t[self._output_index: self._p1[self._output_index]]
 
 
-    def list_of_inputs(self, nodeId):
-        x=self.get_input()
+
+    def list_of_connections(self, nodeId, direction):
+        if direction not in ["input", "output"]:
+            return
+        
+        exec("x=self.get_%s()" % direction)
         (p1, p2) = Pipeline.parenthesis(x)
         l=[]
         i=1
         
-        input_list=[]
+        connection_list=[]
 
         while(i<len(x)):
-            t=x[i]+"_input"
+            t=x[i]+"_%s" % direction
             if t in nodeId:
                 ttt = nodeId[t]
                 n=ttt.getNodeIdentifier(x[i+1:p1[i+1]])
+
                 for v in n:
-                    input_list.append((x[i], v))
+                    connection_list.append((x[i], v))
                 i=p1[i+1]+1
             else:
                 i+=1
 
-        return input_list
+        return connection_list
 
-
-    def list_of_outputs(self, nodeId):
-        x=self.get_output()
-        (p1, p2) = Pipeline.parenthesis(x)
-        l=[]
-        i=1
-
-        output_list=[]
-        while(i<len(x)):
-            t=x[i]+"_output"
-            if t in nodeId:
-                ttt = nodeId[t]
-                n=ttt.getNodeIdentifier(x[i+1:p1[i+1]])
-                for v in n:
-                    output_list.append((x[i], v))
-                i=p1[i+1]+1
-            else:
-                i+=1
-                                    
-        return output_list
-
-
-# class node
-# name - unique string identifier
-# rank - topological sort rank
-# outgoingAdjacent - dictionary on outgoing adjacent
-# missingAllOutput - all the output pipelines are missing (and there is at list one output
-# missingOutput - at least one output pipelines is missing (and there is at list one output
-# missingAllInput - all the input pipelines are missing (and there is at list one input
-# missingInput - at least one input pipelines is missing (and there is at list one input
-# style (for graphviz):
-#    filled
-#    dashed - all input are missing
-# shape (for graphviz):
-#    circle: input/output
-#    rectagle: pipeline
-# color (for graphviz):
-#    red: at least one output pipeline does not connected or file not found
-#    orange: at least one input pipeline does not connected
-#    grey: well connected node
-class Node(object):
-    def __init__(self, name, style="filled", shape="circle", color="grey", missingAllOutput=False, missingOutput=False, missingAllInput=False, missingInput=False):
-        self.name=name
-        self.rank=0
-        self.outgoingAdjacent=[]
-        self.missingAllOutput=missingAllOutput
-        self.missingOutput=missingOutput
-        self.missingAllInput=missingAllInput
-        self.missingInput=missingInput
-        self.style=style
-        self.shape=shape
-        self.color=color
-    
-    def addOutgoingAdjacent(self, name):
-        self.outgoingAdjacent.append(name)
-    
-    def setRank(self, rank):
-        self.rank=rank
-
-    def setStyle(self, style):
-        self.style=style
-
-    def setShape(self, shape):
-        self.shape=shape
-
-    def setColor(self, color):
-        self.color=color
-
-    def setMissigAllOutput(self, flag):
-        self.missingAllOutput=flag
-
-    def setMissigAllInput(self, flag):
-        self.missingAllInput=flag
+class PipelineFile(Pipeline):
+    def __init__(self, filename):
+        f=open(filename, 'r')
+        self._t=[]
+        for l in f.readlines():
+            tokens = word_tokenize(l)
+            # remove comments
+            for i in xrange(len(tokens)):
+                if(tokens[i]=="#"):
+                    tokens=tokens[:i]
+                    break
+            self._t+=tokens
         
-    def setMissigOutput(self, flag):
-        self.missingAllOutput=flag
+        (self._p1, self._p2) = Pipeline.parenthesis(self._t)
+        if(self._p1==None):
+            self._t=[]
+            return
 
-    def setMissigInput(self, flag):
-        self.missingAllInput=flag
-     
-def hasCycle(nodes):
-    tmp_nodes={}
-    for v in nodes:
-        u=[u for u in nodes[v].outgoingAdjacent if u in nodes]
-        tmp_nodes[v]=u
+        self._input_index=self._filter_index=self._output_index=None
+        for i in xrange(len(self._t)):
+            if self._t[i]=="input":
+                self._input_index=i+1
+            elif self._t[i]=="filter":
+                self._filter_index=i+1
+            elif self._t[i]=="output":
+                self._output_index=i+1
 
-    while(True):
-        t = [n for n in tmp_nodes if len(tmp_nodes[n])==0]
-        if(len(t)==0):
-            break
-        for i in t:
-            del tmp_nodes[i]
-            for v in tmp_nodes:
-                if i in tmp_nodes[v]:
-                    tmp_nodes[v].remove(i)
 
-    if len(tmp_nodes)==0:
-        return False
-    return True
+class PipelineString(Pipeline):
+    def __init__(self, s):
+        tokens = word_tokenize(s)
+        # remove comments
+        for i in xrange(len(tokens)):
+            if(tokens[i]=="#"):
+                tokens=tokens[:i]
+                break
+        self._t=tokens
 
-def printGraph(nodes):
-    for v in nodes:
-        print v, nodes[v].outgoingAdjacent
+
+        (self._p1, self._p2) = Pipeline.parenthesis(self._t)
+        if(self._p1==None):
+            self._t=[]
+            return
+
+        self._input_index=self._filter_index=self._output_index=None
+        for i in xrange(len(self._t)):
+            if self._t[i]=="input":
+                self._input_index=i+1
+            elif self._t[i]=="filter":
+                self._filter_index=i+1
+            elif self._t[i]=="output":
+                self._output_index=i+1
+
 
 def main():
 
@@ -393,7 +224,7 @@ def main():
     # con (dict)
     # for each pipeline identifier: (list of input, list of output)
     # each element in the list list (input & output): (type, name)
-    con={} 
+    con={}
 
     # out_node (dict)
     # for each pipeline to pipeline identifier: list of the pipeline in which this identifier is part of the output section
@@ -411,36 +242,36 @@ def main():
     nodeId={}
 
     # output identifiers
-    n=NodeIdList("", ["send_to", "=", ">"], "(\w+)")
+    n=ni.NodeIdList("", ["send_to", "=", ">"], "(\w+)")
     nodeId["pipeline_output"]=n
 
-    n=NodeIdList("elastic", ["hosts", "=", ">"], "\"([^:]*):\d+\"")
+    n=ni.NodeIdList("elastic", ["hosts", "=", ">"], "\"([^:]*):\d+\"")
     nodeId["elasticsearch_output"]=n
 
-    n=NodeIdMultipleFields("udp", [["port", "=", ">"], ["host", "=", ">", "\""]])
+    n=ni.NodeIdMultipleFields("udp", [["port", "=", ">"], ["host", "=", ">", "\""]])
     nodeId["udp_output"]=n
 
-    n=NodeIdMultipleFields("tcp", [["port", "=", ">"], ["host", "=", ">", "\""]])
+    n=ni.NodeIdMultipleFields("tcp", [["port", "=", ">"], ["host", "=", ">", "\""]])
     nodeId["tcp_output"]=n
 
-    n=NodeIdSimple("stdout")
+    n=ni.NodeIdSimple("stdout")
     nodeId["stdout_output"]=n
 
 
     # input identifiers
-    n=NodeIdSingleField("", ["address", "=", ">"])
+    n=ni.NodeIdSingleField("", ["address", "=", ">"])
     nodeId["pipeline_input"]=n
 
-    n=NodeIdSingleField("udp", ["port", "=", ">"])
+    n=ni.NodeIdSingleField("udp", ["port", "=", ">"])
     nodeId["udp_input"]=n
 
-    n=NodeIdSingleField("tcp", ["port", "=", ">"])
+    n=ni.NodeIdSingleField("tcp", ["port", "=", ">"])
     nodeId["tcp_input"]=n
 
-    n=NodeIdSimple("stdin")
+    n=ni.NodeIdSimple("stdin")
     nodeId["stdin_input"]=n
 
-    n=NodeIdSingleField("beats", ["port", "=", ">"])
+    n=ni.NodeIdSingleField("beats", ["port", "=", ">"])
     nodeId["beats_input"]=n
 
 
@@ -453,15 +284,19 @@ def main():
     with open(option.filename, "r") as stream:
         try:
             for p in (yaml.safe_load(stream)):
-                if 'path.config' in p.keys() and 'pipeline.id' in p.keys():
-                    try:
-                        a=Pipeline(p['path.config'])
-                        con[p['pipeline.id']]=(a.list_of_inputs(nodeId), a.list_of_outputs(nodeId))
-                    except Exception as e: 
-                        errors.append((str(e), "error"))
-                        node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
-                        nodes[p['pipeline.id']]=node
-                        errors.append(("Pipeline %s cannot be parsed" % p['pipeline.id'], "error"))
+                try:
+                    if 'config.string' in p.keys() and 'pipeline.id' in p.keys():
+                        a=PipelineString(p['config.string'])
+                    elif 'path.config' in p.keys() and 'pipeline.id' in p.keys():
+                        a=PipelineFile(p['path.config'])
+
+                    con[p['pipeline.id']]=(a.list_of_connections(nodeId, "input"), a.list_of_connections(nodeId, "output"))
+                except Exception as e:
+                    print e
+                    errors.append((str(e), "error"))
+                    node = Node(name=p['pipeline.id'], style="filled", shape="box", color="red", missingAllOutput=True, missingOutput=True, missingAllInput=True, missingInput=True)
+                    nodes[p['pipeline.id']]=node
+                    errors.append(("Pipeline %s cannot be parsed" % p['pipeline.id'], "error"))
                         
         except yaml.YAMLError as exc:
             print(exc)
@@ -469,7 +304,6 @@ def main():
 
 
     for n in con.keys():
-        nodes[n]=[]
         node = Node(name=n, style="filled", shape="box", color="grey", missingAllOutput=False, missingAllInput=False)
         nodes[n]=node
         for (a,b) in con[n][0]:
@@ -508,10 +342,10 @@ def main():
         tmp_in=[x[1] for x in con[p][0] if x[0]=="pipeline"] 
         if(set(tmp_in).issubset(tmp_out)==False): # missing an input
             nodes[p].setColor("orange")
-            nodes[p].setMissigInput(True)
+            nodes[p].setMissingInput(True)
             errors.append(("Some of the input of pipeline %s are missing" % p, "info"))
         if(len(tmp_in)>0 and set(tmp_in).isdisjoint(tmp_out)==True): # missing all input
-            nodes[p].setMissigAllInput(True)
+            nodes[p].setMissingAllInput(True)
             nodes[p].setColor("orange")
             nodes[p].setStyle("dashed")
             errors.append(("All the input of pipeline %s are missing (the pipeline is unused)" % p, "info"))
@@ -521,11 +355,11 @@ def main():
         tmp_out=[x[1] for x in con[p][1] if x[0]=="pipeline"] 
         if(set(tmp_out).issubset(tmp_in)==False): # missing an output
             nodes[p].setColor("red")
-            nodes[p].setMissigOutput(True)
+            nodes[p].setMissingOutput(True)
             errors.append(("Some of the output of pipeline %s are missing" % p, "error"))
 
         if(len(tmp_out)>0 and set(tmp_out).isdisjoint(tmp_in)==True): # missing all output
-            nodes[p].setMissigAllOutput(True)
+            nodes[p].setMissingAllOutput(True)
             print tmp_out, tmp_in
             errors.append(("All the output of pipeline %s are missing" % p, "error"))
 
@@ -542,7 +376,7 @@ def main():
         in_deg[n]=0
 
     for n in nodes:
-        for i in nodes[n].outgoingAdjacent:
+        for i in nodes[n].getOutgoingAdjacent():
             in_deg[i]+=1
     nodes_rank={}
     rank=0
@@ -553,7 +387,7 @@ def main():
         # find sources (first we search for well connected nodes)
         flag=False
         for n in in_deg:
-            if in_deg[n]==0 and tmp_nodes[n].missingAllInput==False:
+            if in_deg[n]==0 and tmp_nodes[n].getMissingAllInput()==False:
                 flag=True
                 nodes_rank[n]=rank
 
@@ -570,7 +404,7 @@ def main():
         # remove ranked nodes
         for n in nodes_rank:
             if nodes_rank[n]==rank:
-                for t in tmp_nodes[n].outgoingAdjacent:
+                for t in tmp_nodes[n].getOutgoingAdjacent():
                     in_deg[t]-=1
                 del tmp_nodes[n]
                 del in_deg[n]
@@ -581,14 +415,14 @@ def main():
     if(len(tmp_nodes)>0):  # cycles exists ! view it.
         # let's remove nodes in which their out degree is 0
         while(True):
-            t = [n for n in tmp_nodes if len(tmp_nodes[n].outgoingAdjacent)==0]
+            t = [n for n in tmp_nodes if len(tmp_nodes[n].isSink())==0]
             if(len(t)==0):
                 break
             for i in t:
                 del tmp_nodes[i]
                 for v in tmp_nodes:
-                    if i in tmp_nodes[v].outgoingAdjacent:
-                        tmp_nodes[v].outgoingAdjacent.remove(i)
+                    if i in tmp_nodes[v].getOutgoingAdjacent():
+                        tmp_nodes[v].removeOutgoingAdjacent(i)
 
 
         tmp=dict.copy(tmp_nodes)
@@ -604,7 +438,7 @@ def main():
 
         errors.append(("One or more cycles has been found", "error"))
         for v in tmp:
-            for u in tmp[v].outgoingAdjacent:
+            for u in tmp[v].getOutgoingAdjacent():
                 if u not in tmp:
                     continue
                 g.edge(v, u, color="red")
@@ -637,10 +471,10 @@ def main():
             for n in ranks[i]:
                 j+=x
 
-                g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes[n].shape, style=nodes[n].style, color=nodes[n].color)
+                g.node(n, pos="%d,%d!" %(j, rank-i), shape=nodes[n].getShape(), style=nodes[n].getStyle(), color=nodes[n].getColor())
             
         for v in nodes:
-            for u in nodes[v].outgoingAdjacent:
+            for u in nodes[v].getOutgoingAdjacent():
                 g.edge(v, u)
 
 
@@ -650,4 +484,5 @@ def main():
         print_errors(errors)
 
 
-main()
+if __name__=="__main__":
+    main()
