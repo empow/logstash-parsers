@@ -40,7 +40,7 @@ class Node(object):
         self._outgoingAdjacent.remove(name)
     def getOutgoingAdjacent(self):
         return self._outgoingAdjacent
-    def isSink():
+    def isSink(self):
         return len(self._outgoingAdjacent)==0
 
 

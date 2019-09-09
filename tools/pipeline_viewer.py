@@ -415,7 +415,7 @@ def main():
     if(len(tmp_nodes)>0):  # cycles exists ! view it.
         # let's remove nodes in which their out degree is 0
         while(True):
-            t = [n for n in tmp_nodes if len(tmp_nodes[n].isSink())==0]
+            t = [n for n in tmp_nodes if tmp_nodes[n].isSink()==True]
             if(len(t)==0):
                 break
             for i in t:
@@ -442,7 +442,6 @@ def main():
                 if u not in tmp:
                     continue
                 g.edge(v, u, color="red")
-        g.view()
 
     else: # no cycles
         ranks={}
