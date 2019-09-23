@@ -1,0 +1,132 @@
+input{
+  udp {
+    port => 5556
+  }
+}
+
+filter{
+
+  grok{
+    tag_on_failure => ["failed_base_log"]
+    match => {"message" => "\%ASA-[0-9]+-(?<message_id>[0-9]+)"}
+
+  }
+
+  if "failed_base_log" not in [tags]{  # ASA logs
+
+  grok{
+    tag_on_failure => ["failed_timestamp"]
+    match => {"message" => "%{SYSLOGTIMESTAMP:tmpTime}"}
+  }
+
+  if "failed_timestamp" in [tags]{
+    mutate{
+      remove_tag => ["failed_timestamp"]
+      rename => {"@timestamp" => "timestamp"}
+    }
+  }
+
+  mutate {
+    add_field => { "timezoneVar" => "US/Central" }
+  }
+  date {
+    match => ["tmpTime", "UNIX", "MMMM dd HH:mm:ss"]
+    target => "timestamp"
+    timezone => "%{timezoneVar}"
+  }
+  ruby {code => 'event.set("timestamp", event.get("timestamp").to_i * 1000)'}
+
+
+  if [message_id]=="106023"{
+    mutate{
+      add_field => {"[event][action]" => "deny"}
+    }
+    grok{
+      tag_on_failure => ["failed_l4protocol"]
+      match => {"message" => "Deny (?<[network][protocol]>[^ ]+) "}
+    }
+    grok{
+      tag_on_failure => ["failed_src_dst"]
+      match => {"message" => "src %{WORD}\:%{IP:[source][ip]}\/%{NUMBER:[source][port]} dst %{WORD}\:%{IP:[destination][ip]}\/%{NUMBER:[destination][port]}"}
+    }
+    grok{
+      tag_on_failure => ["failed_category"]
+      match => { "message" => "by access-group\s\"(?<[event][category]>[^\"]+)"}
+    }
+
+  }
+  else if [message_id]=="106015"{
+    mutate{
+      add_field => {"[event][action]" => "deny"}
+      add_field => {"[network][protocol]" => "tcp"}
+      add_field => {"[event][category]" => "no connection"}
+    }
+
+    grok{
+      tag_on_failure => ["failed_src_dst"]
+      match => {"message" => "from %{IP:[source][ip]}\/%{NUMBER:[source][port]} to %{IP:[destination][ip]}\/%{NUMBER:[destination][port]} (?<[event][description]>[^\n]+)"}
+    }
+  }
+  else if [message_id]=="106012"{
+    mutate{
+      add_field => {"[event][action]" => "deny"}
+    }
+    grok{
+      tag_on_failure => ["failed_src_dst"]
+      match => {"message" => "from %{IP:[source][ip]} to %{IP:[destination][ip]}, (?<[event][category]>[^\n]+)"}
+    }
+  }
+  else if [message_id]=="106100"{
+    grok{
+      tag_on_failure => ["failed_event_action"]
+      match => {"message" => "access-list [^ ]+ (?<[event][action]>[^ ]+)"}
+    }
+    grok{
+      tag_on_failure => ["failed_src_dst"]
+      match => {"message" => "%{IP:[source][ip]}\(%{NUMBER:[source][port]}\).*%{IP:[destination][ip]}\(%{NUMBER:[destination][port]}\)"}
+    }
+    # uncomment to drop permitted logs --  comment to drop permitted logs
+    #if [event][action]=="permitted"{
+    #  drop{}
+    #}
+  }
+
+
+
+
+  mutate{
+    lowercase => ["[network][protocol]"]
+  }
+
+  mutate{
+    add_field => {
+      "[observer][product]" => "ASA" 
+      "[observer][type]" => "Custom"
+      "[observer][vendor]" => "Cisco"
+    }
+    rename => {"message" => "[event][original]"}
+  }
+
+  prune { 
+    whitelist_names => ["^tags$", "^observer$", "^destination$", "^source$", "^event$", "timestamp$", ""]
+  }
+
+
+  } # end of ASA logs
+  else{ # sourcefire_to_SST
+  mutate{
+    add_field => {
+      "[observer][type]" => "sourcefire_to_SST"
+      "[observer][vendor]" => "Cisco"
+    }
+    rename => {"message" => "[event][original]"}
+  }
+
+  } # end of sourcefire_to_SST
+
+
+}
+
+output{
+  stdout{}
+}
