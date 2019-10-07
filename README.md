@@ -225,7 +225,7 @@ filter{
 
 Product Name  | Vendor Name  | Service Type
 --------------|--------------|-------------
-ASA  **NEW!** | Cisco        | Firewall
+(**New!**) ASA| Cisco        | Firewall
 Snort         | Snort        | IDS
 Fortigate     | Fortinet     | IDS
 cbDefence     | Carbon Black | EDR
